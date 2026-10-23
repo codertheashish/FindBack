@@ -36,10 +36,10 @@ def create_app(test_config=None):
     # Initialize database and apply migrations
     init_db(app.config["DATABASE"])
 
-    # Vercel: the /tmp database starts empty on every cold start, so make sure
-    # an admin account exists (username: SEED_ADMIN_USERNAME or "admin",
-    # password: SEED_ADMIN_PASSWORD).
-    if os.environ.get("VERCEL") and os.getenv("SEED_ADMIN_PASSWORD"):
+    # Seed the first administrator once when a deployment has a persistent database.
+    # Do not use SQLite on Vercel: its /tmp filesystem is ephemeral and per-instance.
+    # On Render, DATABASE_PATH should point to the mounted persistent disk.
+    if os.getenv("SEED_ADMIN_PASSWORD"):
         from models import create_staff, ROLE_ADMIN
         _conn = get_db(app.config["DATABASE"])
         try:

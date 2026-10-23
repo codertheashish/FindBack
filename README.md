@@ -6,6 +6,30 @@ Privacy-first lost & found portal for a college campus, now with **college-ERP s
 
 ---
 
+## Production deployment: important database note
+
+**Do not deploy this SQLite-backed version to Vercel for live student accounts.** Vercel Functions use an ephemeral, per-instance filesystem; a SQLite file in `/tmp` can be empty on a cold start or differ between instances. That is why students may disappear and logins may behave inconsistently. Environment variables cannot make that SQLite file persistent.
+
+### Recommended: Render with a persistent disk
+
+This repository includes `render.yaml` configured for a Render web service with a persistent disk mounted at `/var/data`. The database is `/var/data/findback.sqlite`, uploads are stored under `/var/data/uploads`, and the service uses Gunicorn. A persistent disk requires a paid Render instance; do not remove the disk or change its mount path after real data has been added.
+
+1. Push this project (without `.env` or any local database file) to your GitHub repository.
+2. In Render, choose **New → Blueprint** and select the repository containing `render.yaml`.
+3. When asked for `SEED_ADMIN_PASSWORD`, enter a strong password you have not published anywhere. The first admin username is `codertheashish`; the password is the value you enter in Render. Do not use a password already posted in screenshots or committed files.
+4. Deploy and open the Render URL. Sign in to the **Admin / Teacher** portal. Add a test student, sign out, sign in as that student, and verify the student still appears after a redeploy.
+5. Keep the persistent disk attached. Do not set `DATABASE_PATH` to `/tmp` or use the old Vercel URL for production data.
+
+### Existing local students
+
+The local `instance/findback.sqlite` file is intentionally not shipped in this deployment ZIP or committed to GitHub because it contains account records. Before switching production, export/record the student roster securely and recreate/import the required students into the persistent deployment. The database on Vercel and the local database are separate; students created in one do not automatically exist in the other. Do not delete the local database until you have verified the new deployment.
+
+### Security
+
+Never commit `.env`, `instance/findback.sqlite`, or student data. Rotate any signing key or password that has been exposed in a screenshot, chat, or repository. `CAPTCHA_PROVIDER=checkbox` is a simple checkbox UI, not a server-side bot challenge; use Cloudflare Turnstile or Google reCAPTCHA for stronger bot protection if required.
+
+---
+
 ## 1. Run on Windows (PowerShell)
 
 ```powershell
