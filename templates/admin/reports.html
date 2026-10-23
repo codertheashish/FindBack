@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Lost &amp; Found Records – FindBack{% endblock %}
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <div class="mb-4 pb-3 border-bottom">
+        <span class="badge bg-danger font-monospace mb-1">OPERATIONAL RECORDS</span>
+        <h2 class="fw-bold text-dark mb-0">Lost &amp; Found Records</h2>
+        <div class="text-muted small">Every report with the reporting student, verification and return state, and real match-engine suggestions.</div>
+    </div>
+
+    <div class="card border-0 shadow-sm p-3 bg-white rounded-3 mb-3">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">Type</label>
+                <select name="type" class="form-select form-select-sm">
+                    <option value="">All</option>
+                    <option value="lost" {% if filters.report_type == 'lost' %}selected{% endif %}>Lost</option>
+                    <option value="found" {% if filters.report_type == 'found' %}selected{% endif %}>Found</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">Category</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="All">All</option>
+                    {% for c in categories %}<option value="{{ c }}" {% if filters.category == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="All">All</option>
+                    {% for s in statuses %}<option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">Roll no. / name</label>
+                <input name="roll" class="form-control form-control-sm" value="{{ filters.roll }}" maxlength="40">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">Reported from</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ filters.date_from }}">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">Reported to</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ filters.date_to }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-semibold">Keyword (item, description, location)</label>
+                <input name="q" class="form-control form-control-sm" value="{{ filters.q }}" maxlength="100">
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-dark btn-sm w-100" type="submit">Filter</button>
+                <a class="btn btn-light btn-sm border" href="{{ url_for('admin.reports_monitor') }}">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="card border-0 shadow-sm p-3 bg-white rounded-3">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr><th>ID</th><th>Type</th><th>Item</th><th>Category</th><th>Reported by</th><th>Date / location</th><th>Reported at</th><th>Status</th><th>Ownership verified</th><th>Returned</th><th>Possible matches</th><th>Claims</th></tr>
+                </thead>
+                <tbody>
+                {% for r in rows %}
+                    <tr>
+                        <td class="font-monospace">#{{ r.id }}</td>
+                        <td>{% if r.report_type == 'lost' %}<span class="badge bg-warning-subtle text-warning-emphasis">LOST</span>{% else %}<span class="badge bg-info-subtle text-info-emphasis">FOUND</span>{% endif %}</td>
+                        <td><a class="fw-semibold text-decoration-none" href="{{ url_for('reports.detail', report_id=r.id) }}">{{ r.item_name }}</a></td>
+                        <td>{{ r.category }}</td>
+                        <td><span class="font-monospace fw-semibold">{{ r.reporter_roll or r.reporter_username or '—' }}</span><div class="text-muted">{{ r.reporter_name }}</div></td>
+                        <td>{{ r.date_occurred }}<div class="text-muted">{{ r.location }}</div></td>
+                        <td class="text-muted">{{ r.created_at[:16] }}<div>updated {{ r.updated_at[:16] }}</div></td>
+                        <td><span class="badge bg-light text-dark border font-monospace">{{ r.status }}</span></td>
+                        <td>{% if r.report_type == 'found' %}{% if r.is_verified %}<span class="text-success fw-semibold">✓ Yes</span>{% if r.verified_at %}<div class="text-muted">{{ r.verified_at[:10] }}</div>{% endif %}{% else %}<span class="text-muted">No</span>{% endif %}{% else %}—{% endif %}</td>
+                        <td>{% if r.is_returned %}<span class="text-success fw-semibold">✓ Returned</span>{% if r.returned_at %}<div class="text-muted">{{ r.returned_at[:10] }}</div>{% endif %}{% else %}<span class="text-muted">No</span>{% endif %}</td>
+                        <td>{% if r.match_count %}<a href="{{ url_for('reports.view_matches', report_id=r.id) }}">{{ r.match_count }} match{{ 'es' if r.match_count != 1 }}</a><div class="text-muted">best {{ r.top_match.score }}% ({{ r.top_match.confidence }}) → #{{ r.top_match.candidate.id }}</div>{% else %}<span class="text-muted">none ≥ 50%</span>{% endif %}</td>
+                        <td>{{ r.claim_count }}{% if r.pending_claims %} <span class="badge bg-danger">{{ r.pending_claims }} pending</span>{% endif %}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="12" class="text-center text-muted py-4">No records match these filters.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'admin/_pagination.html' %}
+    </div>
+</div>
+{% endblock %}

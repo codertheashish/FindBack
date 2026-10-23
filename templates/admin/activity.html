@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Activity History – FindBack{% endblock %}
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <div class="mb-4 pb-3 border-bottom">
+        <span class="badge bg-danger font-monospace mb-1">APPEND-ONLY AUDIT LOG</span>
+        <h2 class="fw-bold text-dark mb-0">Activity History</h2>
+        <div class="text-muted small">Who did what, and when. Records cannot be edited or deleted through the application. Passwords and private answers are never written here.</div>
+    </div>
+
+    <div class="card border-0 shadow-sm p-3 bg-white rounded-3 mb-3">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">Event</label>
+                <select name="action" class="form-select form-select-sm">
+                    <option value="">All events</option>
+                    {% for value, label in actions %}<option value="{{ value }}" {% if filters.action == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">Lost / found</label>
+                <select name="type" class="form-select form-select-sm">
+                    <option value="">Both</option>
+                    <option value="lost" {% if filters.report_type == 'lost' %}selected{% endif %}>Lost</option>
+                    <option value="found" {% if filters.report_type == 'found' %}selected{% endif %}>Found</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">Category</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="All">All</option>
+                    {% for c in categories %}<option value="{{ c }}" {% if filters.category == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">Resulting status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="All">All</option>
+                    {% for s in statuses %}<option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">Roll no. / username</label>
+                <input name="roll" class="form-control form-control-sm" value="{{ filters.roll }}" maxlength="40">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">Keyword</label>
+                <input name="q" class="form-control form-control-sm" value="{{ filters.q }}" maxlength="100">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">From</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ filters.date_from }}">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold">To</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ filters.date_to }}">
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-dark btn-sm w-100" type="submit">Filter</button>
+                <a class="btn btn-light btn-sm border" href="{{ url_for('admin.activity') }}">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="card border-0 shadow-sm p-3 bg-white rounded-3">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr><th>Time (UTC)</th><th>Actor</th><th>Event</th><th>Report / target</th><th>Status change</th><th>Details</th></tr>
+                </thead>
+                <tbody>
+                {% for a in rows %}
+                    <tr>
+                        <td class="font-monospace text-nowrap">{{ a.timestamp[:19] }}</td>
+                        <td>{% if a.actor_name %}{{ a.actor_name }} <span class="text-muted font-monospace">({{ a.actor_roll or a.actor_role or '—' }})</span>{% else %}<span class="text-muted">system</span>{% endif %}</td>
+                        <td><span class="badge bg-secondary-subtle text-secondary">{{ labels.get(a.action, a.action) }}</span></td>
+                        <td>
+                            {% if a.report_id and a.item_name %}<a href="{{ url_for('reports.detail', report_id=a.report_id) }}">{{ a.item_name }}</a> <span class="text-muted">#{{ a.report_id }}{% if a.report_type %} · {{ a.report_type }}{% endif %}</span>
+                            {% elif a.item_name %}{{ a.item_name }}
+                            {% elif a.target_name %}{{ a.target_name }} <span class="text-muted font-monospace">({{ a.target_roll or '—' }})</span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>{% if a.new_status %}{{ a.old_status or '—' }} &rarr; <strong>{{ a.new_status }}</strong>{% else %}—{% endif %}</td>
+                        <td class="text-secondary">{{ a.details }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">No activity matches these filters.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'admin/_pagination.html' %}
+    </div>
+</div>
+{% endblock %}

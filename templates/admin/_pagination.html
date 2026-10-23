@@ -1,0 +1,16 @@
+{% if pager.pages > 1 %}
+{% set start = [1, pager.page - 3]|max %}
+{% set end = [pager.pages, pager.page + 3]|min %}
+<nav aria-label="Pagination" class="mt-3">
+    <ul class="pagination pagination-sm mb-0 flex-wrap">
+        {% for n in range(start, end + 1) %}
+            {% set a = request.args.to_dict() %}
+            {% set _ = a.update({'page': n}) %}
+            <li class="page-item {% if n == pager.page %}active{% endif %}"><a class="page-link" href="{{ url_for(request.endpoint, **a) }}">{{ n }}</a></li>
+        {% endfor %}
+    </ul>
+    <div class="text-muted small mt-1">{{ pager.total }} record(s) · page {{ pager.page }} of {{ pager.pages }}</div>
+</nav>
+{% else %}
+<div class="text-muted small mt-2">{{ pager.total }} record(s)</div>
+{% endif %}

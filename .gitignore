@@ -1,0 +1,36 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Environment Variables
+.env
+
+# SQLite Instance & Uploads
+instance/*.sqlite
+instance/*.db
+uploads/*
+!uploads/.gitkeep
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Backups / secrets created by the migration and first run
+instance/*.bak
+instance/.secret_key

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Report Lost Belonging – FindBack{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm p-4 bg-white rounded-3">
+                <div class="mb-4">
+                    <span class="badge bg-warning-subtle text-warning-emphasis font-monospace mb-1">LOST ITEM REGISTRATION</span>
+                    <h3 class="fw-bold text-dark">Report a Lost Belonging</h3>
+                    <p class="text-muted small">
+                        Provide accurate details so our deterministic matching algorithm can pair your report with items turned into security or campus staff.
+                    </p>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data" action="{{ url_for('reports.report_lost') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Item Title / Name *</label>
+                            <input type="text" class="form-control" name="item_name" required placeholder="e.g. Dell XPS 15 Laptop, Navy Blue Herschel Backpack">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Category *</label>
+                            <select class="form-select" name="category" required>
+                                <option value="" disabled selected>Select category</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat }}">{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Public Description *</label>
+                            <textarea class="form-control" name="description" rows="3" required placeholder="Describe appearance, brand, color, material, and condition..."></textarea>
+                            <div class="form-text small">This description is public so other campus members can identify potential items.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Date Lost *</label>
+                            <input type="date" class="form-control" name="date_occurred" required value="{{ today_str }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Approximate Location Lost *</label>
+                            <input type="text" class="form-control" name="location" required placeholder="e.g. Main Library 2nd Floor Silent Room, Sports Complex">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-primary">
+                                Distinguishing Characteristics <span class="fw-normal text-muted">(Private Ownership Proof)</span>
+                            </label>
+                            <textarea class="form-control" name="distinguishing_features" rows="2" placeholder="e.g. Hidden scratch under battery, specific lock code, custom engraved initials 'AK', unique keychain attached"></textarea>
+                            <div class="form-text small">This data powers high-precision matching and verifies your ownership during claim review.</div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-danger">
+                                Private Contact Information <span class="fw-normal text-muted">(NEVER exposed publicly)</span>
+                            </label>
+                            <input type="text" class="form-control" name="private_contact" placeholder="Phone number, alternate email, or campus room #">
+                            <div class="form-text small">
+                                🔒 Encrypted on storage. Only administrators can see this when coordinating the safe return handover.
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Item Photo (Optional)</label>
+                            <input type="file" class="form-control" name="image" accept=".png,.jpg,.jpeg,.webp">
+                            <div class="form-text small">Upload an image if you have a photo of your item (Max 5MB).</div>
+                        </div>
+
+                        <div class="col-12 pt-3">
+                            <button type="submit" class="btn btn-warning px-4 py-2 fw-semibold w-100">Publish Lost Report & Search Matches</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

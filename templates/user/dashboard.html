@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}My Activity – FindBack{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-0">Personal Activity Dashboard</h2>
+            <div class="text-muted small">Manage your lost listings, found reports, and submitted ownership claims</div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('reports.report_lost') }}" class="btn btn-warning btn-sm fw-semibold">+ Report Lost</a>
+            <a href="{{ url_for('reports.report_found') }}" class="btn btn-info btn-sm text-white fw-semibold">+ Report Found</a>
+        </div>
+    </div>
+
+    <!-- Profile -->
+    <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <span class="badge bg-secondary font-monospace mb-1">ROLL NO. {{ profile.roll_number or '—' }}</span>
+                <h4 class="fw-bold text-dark mb-0">{{ profile.name }}</h4>
+                <div class="text-muted small">{{ profile.class_branch or 'Class not set' }}{% if profile.academic_year %} · {{ profile.academic_year }}{% endif %}</div>
+            </div>
+            <a href="{{ url_for('auth.change_password') }}" class="btn btn-sm btn-outline-secondary">Change password</a>
+        </div>
+    </div>
+
+    <!-- Possible matches (real matching engine) -->
+    <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+        <h5 class="fw-bold text-dark mb-3">Possible Matches for My Reports</h5>
+        {% for group in possible_matches %}
+            <div class="mb-3">
+                <div class="small fw-semibold text-dark">{{ group.report.report_type|upper }} · {{ group.report.item_name }} <span class="text-muted">#{{ group.report.id }}</span></div>
+                {% for m in group.matches %}
+                    <div class="d-flex flex-wrap justify-content-between align-items-center small border-bottom py-1">
+                        <span><a href="{{ url_for('reports.detail', report_id=m.candidate.id) }}">{{ m.candidate.item_name }}</a> <span class="text-muted">– {{ m.candidate.location }}</span></span>
+                        <span><span class="badge bg-success-subtle text-success-emphasis">{{ m.score }}% {{ m.confidence }}</span>
+                            {% if m.candidate.report_type == 'found' %}<a class="btn btn-sm btn-primary py-0 ms-1" href="{{ url_for('claims.submit_claim', report_id=m.candidate.id) }}">Claim</a>{% endif %}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted small mb-0">No strong matches (50%+) right now. We check again every time you open this page.</p>
+        {% endfor %}
+    </div>
+
+    <!-- My Claims Section -->
+    <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+        <h5 class="fw-bold text-dark mb-3">My Submitted Ownership Claims ({{ my_claims|length }})</h5>
+        {% if my_claims %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Claim ID</th>
+                            <th>Item Name</th>
+                            <th>Location</th>
+                            <th>Submitted</th>
+                            <th>Verification Status</th>
+                            <th>Item Return Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in my_claims %}
+                            <tr>
+                                <td class="font-monospace">#{{ c.id }}</td>
+                                <td class="fw-semibold text-dark">{{ c.item_name }}</td>
+                                <td class="text-secondary">{{ c.location }}</td>
+                                <td class="text-muted">{{ c.created_at[:10] }}</td>
+                                <td>
+                                    {% if c.status == 'Approved' %}
+                                        <span class="badge bg-success">Verified & Approved</span>
+                                    {% elif c.status == 'Rejected' %}
+                                        <span class="badge bg-danger">Claim Rejected</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Under Review</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-light text-dark border font-monospace">{{ c.report_status }}</span>{% if c.returned_at %}<div class="text-muted">returned {{ c.returned_at[:10] }}</div>{% endif %}</td>
+                                <td>
+                                    <a href="{{ url_for('claims.view_claim', claim_id=c.id) }}" class="btn btn-sm btn-outline-primary">
+                                        View Proof & Status
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted small mb-0">You have not filed any ownership claims yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- My Lost Reports -->
+    <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+        <h5 class="fw-bold text-dark mb-3">My Lost Item Reports ({{ my_lost|length }})</h5>
+        {% if my_lost %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Location</th>
+                            <th>Date Lost</th>
+                            <th>Return Status</th>
+                            <th>Smart Matches</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in my_lost %}
+                            <tr>
+                                <td class="font-monospace">#{{ item.id }}</td>
+                                <td>
+                                    <a href="{{ url_for('reports.detail', report_id=item.id) }}" class="fw-semibold text-primary text-decoration-none">
+                                        {{ item.item_name }}
+                                    </a>
+                                </td>
+                                <td>{{ item.category }}</td>
+                                <td class="text-secondary">{{ item.location }}</td>
+                                <td class="text-muted">{{ item.date_occurred }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border font-monospace">{{ item.status }}</span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('reports.view_matches', report_id=item.id) }}" class="btn btn-sm btn-outline-success">
+                                        Check Matches
+                                    </a>
+                                    {% if item.status in ('Open', 'Potential Match') %}<a href="{{ url_for('reports.edit_report', report_id=item.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>{% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted small mb-0">No active lost reports created by you.</p>
+        {% endif %}
+    </div>
+
+    <!-- Claims on my found items (status only; claimant identity stays private) -->
+    {% if claims_on_my_found %}
+    <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+        <h5 class="fw-bold text-dark mb-3">Claims on Items I Found</h5>
+        <ul class="small mb-0">
+            {% for c in claims_on_my_found %}<li>Someone filed a claim on <a href="{{ url_for('reports.detail', report_id=c.report_id) }}">{{ c.item_name }}</a> – <strong>{{ c.status }}</strong> (item is now {{ c.report_status }})</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- My Found Reports -->
+    <div class="card border-0 shadow-sm p-4 bg-white rounded-3">
+        <h5 class="fw-bold text-dark mb-3">My Found Item Reports ({{ my_found|length }})</h5>
+        {% if my_found %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Found At</th>
+                            <th>Date Found</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in my_found %}
+                            <tr>
+                                <td class="font-monospace">#{{ item.id }}</td>
+                                <td>
+                                    <a href="{{ url_for('reports.detail', report_id=item.id) }}" class="fw-semibold text-primary text-decoration-none">
+                                        {{ item.item_name }}
+                                    </a>
+                                </td>
+                                <td>{{ item.category }}</td>
+                                <td class="text-secondary">{{ item.location }}</td>
+                                <td class="text-muted">{{ item.date_occurred }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border font-monospace">{{ item.status }}</span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('reports.view_matches', report_id=item.id) }}" class="btn btn-sm btn-light border">
+                                        Matches
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted small mb-0">You have not reported any found items yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

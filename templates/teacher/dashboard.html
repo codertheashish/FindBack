@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Teacher Panel – FindBack{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4 pb-3 border-bottom">
+        <span class="badge bg-info text-dark font-monospace mb-1">TEACHER PANEL</span>
+        <h2 class="fw-bold text-dark mb-0">Welcome, {{ current_user_name }}</h2>
+        <div class="text-muted small">Your access is limited to the permissions the college has granted to the Teacher role.</div>
+    </div>
+    <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+        <h5 class="fw-bold text-dark mb-2">Your permissions</h5>
+        {% if permissions %}{% for p in permissions %}<code class="me-2">{{ p }}</code>{% endfor %}
+        {% else %}<span class="text-muted small">No permissions have been granted yet. Contact an administrator.</span>{% endif %}
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            {% if can('reports.view_all') %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.reports_monitor') }}">Lost &amp; Found Records</a>{% endif %}
+            {% if can('students.view') %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.students') }}">Students</a>{% endif %}
+            {% if can('audit.view') %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.activity') }}">Activity History</a>{% endif %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('auth.change_password') }}">Change password</a>
+        </div>
+    </div>
+    {% if can('reports.view_all') %}
+    <div class="card border-0 shadow-sm p-4 bg-white rounded-3">
+        <h5 class="fw-bold text-dark mb-3">Recent reports (private details hidden)</h5>
+        <div class="table-responsive"><table class="table table-sm small align-middle mb-0">
+            <thead class="table-light"><tr><th>ID</th><th>Type</th><th>Item</th><th>Category</th><th>Reported by</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for r in recent %}
+                <tr><td class="font-monospace">#{{ r.id }}</td><td>{{ r.report_type|upper }}</td>
+                    <td><a href="{{ url_for('reports.detail', report_id=r.id) }}">{{ r.item_name }}</a></td>
+                    <td>{{ r.category }}</td><td>{{ r.reporter_roll or '—' }} · {{ r.reporter_name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ r.status }}</span></td></tr>
+            {% else %}<tr><td colspan="6" class="text-muted text-center py-3">No reports yet.</td></tr>{% endfor %}
+            </tbody></table></div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

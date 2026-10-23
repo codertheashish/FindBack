@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Matches for {{ target.item_name }} – FindBack{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-3">
+        <a href="{{ url_for('reports.detail', report_id=target.id) }}" class="text-decoration-none small text-muted">&larr; Back to Item #{{ target.id }}</a>
+    </div>
+
+    <!-- Target Item Header -->
+    <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <span class="badge bg-secondary mb-1 font-monospace">SOURCE REPORT #{{ target.id }}</span>
+                <h3 class="fw-bold text-dark mb-1">{{ target.item_name }}</h3>
+                <div class="text-muted small">
+                    Type: <strong class="text-uppercase">{{ target.report_type }}</strong> · Category: <strong>{{ target.category }}</strong> · Location: <strong>{{ target.location }}</strong> · Date: <strong>{{ target.date_occurred }}</strong>
+                </div>
+            </div>
+            <div>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fw-semibold">
+                    Deterministic Matching Engine Active
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matching Results -->
+    <h4 class="fw-bold text-dark mb-3">Potential Matching Counterparts ({{ matches|length }} found)</h4>
+
+    {% if matches %}
+        <div class="row g-3">
+            {% for m in matches %}
+                {% set cand = m.candidate %}
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm p-3 bg-white rounded-3">
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-2 text-center text-md-start">
+                                <div class="p-3 bg-light rounded text-center">
+                                    <div class="display-6 fw-bold font-monospace text-primary">{{ m.score }}%</div>
+                                    <div class="badge bg-{% if m.confidence == 'High' %}success{% elif m.confidence == 'Moderate' %}warning text-dark{% else %}secondary{% endif %} mt-1">
+                                        {{ m.confidence }} Match
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.7rem;">
+                                        {{ cand.report_type|upper }} #{{ cand.id }}
+                                    </span>
+                                    <span class="badge bg-light text-dark border font-monospace" style="font-size: 0.7rem;">
+                                        {{ cand.status }}
+                                    </span>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">{{ cand.item_name }}</h5>
+                                <p class="text-secondary small mb-2">{{ cand.description }}</p>
+                                <div class="small text-muted">
+                                    <span>📍 {{ cand.location }}</span> · <span>📅 {{ cand.date_occurred }}</span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="p-2 bg-light rounded border small mb-2 font-monospace" style="font-size: 0.75rem;">
+                                    <div class="fw-bold text-dark mb-1">Score Breakdown (100 pts max):</div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Category:</span> <strong>{{ m.breakdown.category_points }}/30</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Location:</span> <strong>{{ m.breakdown.location_points }}/25</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Content/Keywords:</span> <strong>{{ m.breakdown.content_points }}/30</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Date Proximity:</span> <strong>{{ m.breakdown.date_points }}/15</strong>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url_for('reports.detail', report_id=cand.id) }}" class="btn btn-sm btn-light border flex-grow-1">
+                                        View Item
+                                    </a>
+                                    {% if cand.report_type == 'found' and cand.status not in ('Returned', 'Closed') %}
+                                        <a href="{{ url_for('claims.submit_claim', report_id=cand.id) }}" class="btn btn-sm btn-primary flex-grow-1">
+                                            Claim This Item
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-12 mt-2 pt-2 border-top">
+                                <div class="small text-muted">
+                                    <strong>Why this matched:</strong>
+                                    <ul class="mb-0 ps-3">
+                                        {% for exp in m.explanations %}
+                                            <li>{{ exp }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="p-5 text-center bg-white rounded border">
+            <h5 class="text-muted fw-semibold">No high-confidence matches found yet</h5>
+            <p class="text-secondary small mb-3">Our deterministic matching system continuously checks new reports as they are submitted.</p>
+            <a href="{{ url_for('reports.browse') }}" class="btn btn-sm btn-outline-primary">Browse All Active Items</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

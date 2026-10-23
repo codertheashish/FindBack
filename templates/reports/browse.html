@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Lost & Found Items – FindBack{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header & Privacy Banner -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 pb-3 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">Browse Campus Catalog</h2>
+            <div class="text-muted small">
+                Search verified lost and found listings across campus departments and facilities
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('reports.report_lost') }}" class="btn btn-warning btn-sm fw-semibold">+ Report Lost</a>
+            <a href="{{ url_for('reports.report_found') }}" class="btn btn-info btn-sm text-white fw-semibold">+ Report Found</a>
+        </div>
+    </div>
+
+    <div class="alert alert-info py-2 px-3 small d-flex align-items-center justify-content-between mb-4 shadow-sm" role="alert">
+        <div>
+            <strong>🔒 Privacy Guarantee Active:</strong> Sensitive personal phone numbers, email addresses, and secret ownership verification answers are masked in public listings.
+        </div>
+    </div>
+
+    <!-- Filters Panel -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-3">
+            <form method="GET" action="{{ url_for('reports.browse') }}" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">Keywords</label>
+                    <input type="text" name="q" class="form-control form-control-sm" placeholder="e.g. Laptop, Wallet, Keys" value="{{ keyword }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Report Type</label>
+                    <select name="type" class="form-select form-select-sm">
+                        <option value="" {% if not selected_type %}selected{% endif %}>All Types</option>
+                        <option value="lost" {% if selected_type == 'lost' %}selected{% endif %}>Lost Only</option>
+                        <option value="found" {% if selected_type == 'found' %}selected{% endif %}>Found Only</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Category</label>
+                    <select name="category" class="form-select form-select-sm">
+                        <option value="All" {% if selected_category == 'All' %}selected{% endif %}>All Categories</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Location</label>
+                    <input type="text" name="location" class="form-control form-control-sm" placeholder="e.g. Library, Gym" value="{{ location }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Workflow Status</label>
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Statuses</option>
+                        <option value="Open" {% if selected_status == 'Open' %}selected{% endif %}>Open</option>
+                        <option value="Potential Match" {% if selected_status == 'Potential Match' %}selected{% endif %}>Potential Match</option>
+                        <option value="Claim Pending" {% if selected_status == 'Claim Pending' %}selected{% endif %}>Claim Pending</option>
+                        <option value="Verified" {% if selected_status == 'Verified' %}selected{% endif %}>Verified</option>
+                        <option value="Returned" {% if selected_status == 'Returned' %}selected{% endif %}>Returned</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">Filter</button>
+                    <a href="{{ url_for('reports.browse') }}" class="btn btn-light btn-sm border" title="Reset">✕</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Grid -->
+    <div class="row g-3">
+        {% for item in reports %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            {% if item.report_type == 'lost' %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis font-monospace" style="font-size: 0.72rem;">LOST</span>
+                            {% else %}
+                                <span class="badge bg-info-subtle text-info-emphasis font-monospace" style="font-size: 0.72rem;">FOUND</span>
+                            {% endif %}
+                            
+                            <span class="badge bg-light text-dark border font-monospace" style="font-size: 0.7rem;">{{ item.status }}</span>
+                        </div>
+
+                        <h5 class="card-title fw-bold text-dark mb-1 text-truncate" title="{{ item.item_name }}">
+                            {{ item.item_name }}
+                        </h5>
+                        <div class="text-muted small mb-2">Category: <span class="fw-medium text-dark">{{ item.category }}</span></div>
+
+                        <p class="card-text text-secondary small flex-grow-1 text-truncate-3">
+                            {{ item.description }}
+                        </p>
+
+                        <div class="p-2 bg-light rounded small text-secondary mb-3">
+                            <div>📍 <strong class="text-dark">Location:</strong> {{ item.location }}</div>
+                            <div>📅 <strong class="text-dark">Date:</strong> {{ item.date_occurred }}</div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-auto">
+                            <a href="{{ url_for('reports.detail', report_id=item.id) }}" class="btn btn-sm btn-light border flex-grow-1">
+                                Safe View
+                            </a>
+                            <a href="{{ url_for('reports.view_matches', report_id=item.id) }}" class="btn btn-sm btn-outline-success" title="Check Smart Matches">
+                                🔍 Matches
+                            </a>
+                            {% if item.report_type == 'found' and item.status not in ('Returned', 'Closed') %}
+                                <a href="{{ url_for('claims.submit_claim', report_id=item.id) }}" class="btn btn-sm btn-primary">
+                                    Claim
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-12 py-5 text-center bg-white rounded border">
+                <h5 class="text-muted fw-semibold">No reports match your selected criteria</h5>
+                <p class="text-secondary small mb-3">Try adjusting your keyword, location filter, or category.</p>
+                <a href="{{ url_for('reports.browse') }}" class="btn btn-sm btn-outline-primary">Clear Filters</a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

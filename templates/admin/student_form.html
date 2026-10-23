@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if student else 'Add' }} Student – FindBack Admin{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="mb-3"><a href="{{ url_for('admin.students') }}" class="text-decoration-none small text-muted">&larr; Back to students</a></div>
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm p-4 bg-white rounded-3">
+                <h3 class="fw-bold text-dark mb-3">{{ 'Edit student' if student else 'Add student account' }}</h3>
+                <form method="POST" action="{{ url_for('admin.student_edit', student_id=student.id) if student else url_for('admin.student_new') }}" autocomplete="off">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">College roll number *</label>
+                            <input class="form-control font-monospace" name="roll_number" required maxlength="32" value="{{ form.roll_number or '' }}" placeholder="21CS001">
+                            <div class="form-text small">This is the student's login username. Must be unique.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Full name *</label>
+                            <input class="form-control" name="name" required maxlength="100" value="{{ form.name or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Registered mobile number *</label>
+                            <input class="form-control font-monospace" name="mobile" required inputmode="numeric" maxlength="16" value="{{ form.mobile or '' }}" placeholder="9876543210">
+                            {% if student %}
+                            <div class="form-text small">Changing the mobile number does <strong>not</strong> change the student's current password.</div>
+                            {% else %}
+                            <div class="form-text small">Becomes the <strong>initial password</strong> (stored only as a hash). The student must change it at first login.</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Class / branch</label>
+                            <input class="form-control" name="class_branch" maxlength="60" value="{{ form.class_branch or '' }}" placeholder="B.Tech CSE - Sec A">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Year / batch</label>
+                            <input class="form-control" name="academic_year" maxlength="30" value="{{ form.academic_year or '' }}" placeholder="2nd Year / 2023-27">
+                        </div>
+                        <div class="col-12 pt-2">
+                            <button class="btn btn-primary px-4 fw-semibold" type="submit">{{ 'Save changes' if student else 'Create student account' }}</button>
+                            <a class="btn btn-light border ms-2" href="{{ url_for('admin.students') }}">Cancel</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

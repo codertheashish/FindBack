@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}{{ report.item_name }} – FindBack{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-3">
+        <a href="{{ url_for('reports.browse') }}" class="text-decoration-none small text-muted">&larr; Back to Item Catalog</a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Report Detail Card -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            {% if report.report_type == 'lost' %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis font-monospace">LOST ITEM</span>
+                            {% else %}
+                                <span class="badge bg-info-subtle text-info-emphasis font-monospace">FOUND ITEM</span>
+                            {% endif %}
+                            <span class="badge bg-light text-dark border font-monospace">{{ report.status }}</span>
+                            <span class="text-muted small">Report #{{ report.id }}</span>
+                        </div>
+                        <h2 class="fw-bold text-dark mb-0">{{ report.item_name }}</h2>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('reports.view_matches', report_id=report.id) }}" class="btn btn-outline-success btn-sm">
+                            🔍 Smart Matches
+                        </a>
+                        {% if can_edit %}
+                            <a href="{{ url_for('reports.edit_report', report_id=report.id) }}" class="btn btn-outline-secondary btn-sm">✏️ Edit</a>
+                        {% endif %}
+                        {% if is_student and report.report_type == 'found' and report.status not in ('Returned', 'Closed') and not is_owner %}
+                            <a href="{{ url_for('claims.submit_claim', report_id=report.id) }}" class="btn btn-primary btn-sm">
+                                Submit Private Claim
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Workflow status bar -->
+                <div class="p-3 bg-light rounded-3 mb-4 border">
+                    <div class="text-muted small fw-semibold mb-2">Item Return Lifecycle Stage:</div>
+                    <div class="d-flex flex-wrap gap-1 align-items-center font-monospace" style="font-size: 0.75rem;">
+                        {% set stages = ['Open', 'Potential Match', 'Claim Pending', 'Verified', 'Returned', 'Closed'] %}
+                        {% for st in stages %}
+                            {% if st == report.status %}
+                                <span class="badge bg-primary px-2 py-1">{{ st }} (Current)</span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary px-2 py-1">{{ st }}</span>
+                            {% endif %}
+                            {% if not loop.last %}
+                                <span class="text-muted">&rarr;</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Details Grid -->
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <div class="p-2 border rounded bg-light">
+                            <span class="text-muted small d-block">Category</span>
+                            <span class="fw-semibold text-dark">{{ report.category }}</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-2 border rounded bg-light">
+                            <span class="text-muted small d-block">Date Occurred</span>
+                            <span class="fw-semibold text-dark">{{ report.date_occurred }}</span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="p-2 border rounded bg-light">
+                            <span class="text-muted small d-block">Reported Location</span>
+                            <span class="fw-semibold text-dark">📍 {{ report.location }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="fw-bold text-dark">Public Description</h5>
+                    <p class="text-secondary">{{ report.description }}</p>
+                </div>
+
+                <!-- Distinguishing Features Privacy Section -->
+                <div class="mb-4">
+                    <h5 class="fw-bold text-dark">Distinguishing Features & Characteristics</h5>
+                    {% if hide_secret_features %}
+                        <div class="alert alert-secondary py-3 px-3 d-flex align-items-center gap-2 mb-0">
+                            <div>🔒</div>
+                            <div class="small">
+                                <strong>Confidential Anti-Fraud Shield:</strong> Specific identifying marks are stored securely and hidden from public display. 
+                                Claimants must identify these unique traits in their ownership claim questions to verify possession.
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="p-3 bg-light rounded border text-dark font-monospace small">
+                            {{ report.distinguishing_features or 'None specified' }}
+                        </div>
+                        {% if report.report_type == 'found' %}
+                            <div class="text-muted small mt-1">Visible only to finder and administrators.</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <!-- Private Contact Section -->
+                <div class="mb-3">
+                    <h5 class="fw-bold text-dark">Contact Information</h5>
+                    {% if hide_private_contact %}
+                        <div class="text-muted small">
+                            🔒 <em>Private information protected by FindBack privacy policy. Contact details are only visible to authorized administrators when coordinating handovers.</em>
+                        </div>
+                    {% else %}
+                        <div class="p-3 bg-light rounded border text-dark small">
+                            <strong>Direct Contact / Storage:</strong> {{ report.private_contact or 'Handed to campus security' }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Audit Trail (for Owner or Admin) -->
+            {% if audit_trail %}
+                <div class="card border-0 shadow-sm p-4 bg-white rounded-3">
+                    <h5 class="fw-bold text-dark mb-3">Status Audit Log</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0 font-monospace small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Changed By</th>
+                                    <th>Transition</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for a in audit_trail %}
+                                    <tr>
+                                        <td>{{ a.timestamp[:19] }}</td>
+                                        <td>{{ a.user_name }}{% if a.user_roll or a.user_username %} <span class="text-muted">({{ a.user_roll or a.user_username }})</span>{% endif %}</td>
+                                        <td>
+                                            <span class="badge bg-secondary-subtle text-secondary">{{ a.old_status }}</span>
+                                            &rarr;
+                                            <span class="badge bg-primary-subtle text-primary">{{ a.new_status }}</span>
+                                        </td>
+                                        <td class="text-secondary">{{ a.notes }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar Actions & Admin Controls -->
+        <div class="col-lg-4">
+            {% if can_moderate %}
+                <div class="card border-0 shadow-sm p-3 bg-white rounded-3 mb-4 border-top border-danger border-3">
+                    <h6 class="fw-bold text-danger text-uppercase small mb-3">🛡️ Administrator Management</h6>
+                    <form method="POST" action="{{ url_for('admin.update_status', report_id=report.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Transition Status</label>
+                            <select name="status" class="form-select form-select-sm">
+                                {% for s in workflow_statuses %}
+                                    <option value="{{ s }}" {% if report.status == s %}selected{% endif %}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Audit Note</label>
+                            <input type="text" name="notes" class="form-control form-control-sm" placeholder="e.g. Student presented matching student ID">
+                        </div>
+                        <button type="submit" class="btn btn-danger btn-sm w-100 fw-semibold mb-2">Update Workflow Status</button>
+                    </form>
+                </div>
+            {% endif %}
+
+            {% if can_view_all or is_owner %}
+            <div class="card border-0 shadow-sm p-3 bg-white rounded-3 mb-4">
+                <h6 class="fw-bold text-dark small mb-2">Reported by</h6>
+                <div class="small"><span class="font-monospace fw-semibold">{{ report.reporter_roll or report.reporter_username or '—' }}</span> · {{ report.reporter_name }}</div>
+                <div class="text-muted small mt-1">Reported {{ report.created_at[:16] }} · updated {{ report.updated_at[:16] }}</div>
+                {% if report.verified_at %}<div class="text-muted small">Ownership verified {{ report.verified_at[:16] }}</div>{% endif %}
+                {% if report.returned_at %}<div class="text-muted small">Returned {{ report.returned_at[:16] }}</div>{% endif %}
+            </div>
+            {% endif %}
+
+            {% if can_view_all %}
+            <div class="card border-0 shadow-sm p-3 bg-white rounded-3 mb-4">
+                <h6 class="fw-bold text-dark small mb-2">Claim &amp; verification history</h6>
+                {% for c in claim_history %}
+                    <div class="small border-bottom py-1">Claim #{{ c.id }} by <span class="font-monospace">{{ c.claimant_roll or '—' }}</span> – <strong>{{ c.status }}</strong>
+                        <div class="text-muted">{{ c.created_at[:16] }}{% if c.reviewed_at %} · reviewed {{ c.reviewed_at[:16] }} by {{ c.reviewer_name or '—' }}{% endif %}</div>
+                        {% if c.status == 'Pending' and can('claims.review') and can('private.view') %}<a href="{{ url_for('admin.review_claim_detail', claim_id=c.id) }}">Inspect &amp; verify →</a>{% endif %}</div>
+                {% else %}<div class="text-muted small">No claims filed.</div>{% endfor %}
+            </div>
+            <div class="card border-0 shadow-sm p-3 bg-white rounded-3 mb-4">
+                <h6 class="fw-bold text-dark small mb-2">Potential {{ 'found' if report.report_type == 'lost' else 'lost' }} matches</h6>
+                {% for m in staff_matches %}
+                    <div class="small border-bottom py-1"><a href="{{ url_for('reports.detail', report_id=m.candidate.id) }}">#{{ m.candidate.id }} {{ m.candidate.item_name }}</a>
+                        <span class="badge bg-light text-dark border">{{ m.score }}% {{ m.confidence }}</span></div>
+                {% else %}<div class="text-muted small">No matches ≥ 25%.</div>{% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="card border-0 shadow-sm p-3 bg-white rounded-3">
+                <h6 class="fw-bold text-dark small mb-3">Safety & Verification Notes</h6>
+                <ul class="text-muted small ps-3 mb-0">
+                    <li class="mb-2">Never transfer money for shipping or return fees without security staff presence.</li>
+                    <li class="mb-2">High-value electronics are stored in Campus Security safe lockers.</li>
+                    <li>Claim verification requires matching serial number or unique identifying marks.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

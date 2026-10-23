@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Claim #{{ claim.id }} Status – FindBack{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-3">
+        {% if is_claimant %}<a href="{{ url_for('reports.my_dashboard') }}" class="text-decoration-none small text-muted">&larr; Back to My Dashboard</a>{% else %}<a href="{{ url_for('admin.dashboard') }}" class="text-decoration-none small text-muted">&larr; Back to Admin Console</a>{% endif %}
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm p-4 bg-white rounded-3">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <span class="badge bg-secondary font-monospace mb-1">CLAIM RECORD #{{ claim.id }}</span>
+                        <h3 class="fw-bold text-dark mb-0">Claim on: {{ claim.item_name }}</h3>
+                        <div class="text-muted small">Submitted on {{ claim.created_at[:19] }}</div>
+                    </div>
+                    <div>
+                        {% if claim.status == 'Approved' %}
+                            <span class="badge bg-success px-3 py-2 fs-6">Approved (Verified)</span>
+                        {% elif claim.status == 'Rejected' %}
+                            <span class="badge bg-danger px-3 py-2 fs-6">Rejected</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark px-3 py-2 fs-6">Under Admin Review</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="p-3 bg-light rounded border mb-4">
+                    <div class="small text-secondary mb-1">Reported Item Category: <strong>{{ claim.category }}</strong></div>
+                    <div class="small text-secondary">Associated Item Report Status: <strong>{{ claim.report_status }}</strong></div>
+                </div>
+
+                <h5 class="fw-bold text-dark mb-3">Your Confidential Verification Proof</h5>
+                <div class="p-3 bg-light rounded border mb-4 font-monospace small">
+                    <div class="mb-2">
+                        <strong class="text-dark">1. Unique Marks & Serial:</strong>
+                        <div class="text-secondary">{{ answers.distinguishing_proof }}</div>
+                    </div>
+                    <div class="mb-2">
+                        <strong class="text-dark">2. Internal Contents:</strong>
+                        <div class="text-secondary">{{ answers.contents_or_pouch_details }}</div>
+                    </div>
+                    <div class="mb-2">
+                        <strong class="text-dark">3. Screen / Wallpaper / Keys:</strong>
+                        <div class="text-secondary">{{ answers.marks_or_serial_number }}</div>
+                    </div>
+                    <div>
+                        <strong class="text-dark">4. Loss Circumstances:</strong>
+                        <div class="text-secondary">{{ answers.loss_circumstances }}</div>
+                    </div>
+                </div>
+
+                {% if claim.reviewed_at %}
+                    <div class="p-3 rounded border {% if claim.status == 'Approved' %}border-success bg-success-subtle{% else %}border-danger bg-danger-subtle{% endif %}">
+                        <h6 class="fw-bold mb-1">Security Review Note:</h6>
+                        <div class="small mb-1">{{ claim.verification_notes or 'No additional review notes.' }}</div>
+                        <div class="text-muted small" style="font-size: 0.75rem;">Reviewed at {{ claim.reviewed_at[:19] }}</div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info py-2 px-3 small mb-0">
+                        ⏳ <strong>Pending Review:</strong> An administrator will compare your answers with the item. You will be contacted via your provided details if approved.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

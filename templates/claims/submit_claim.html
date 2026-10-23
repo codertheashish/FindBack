@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Ownership Claim – FindBack{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm p-4 bg-white rounded-3">
+                <div class="mb-4">
+                    <span class="badge bg-primary-subtle text-primary font-monospace mb-1">OWNERSHIP VERIFICATION</span>
+                    <h3 class="fw-bold text-dark">Submit Confidential Ownership Claim</h3>
+                    <p class="text-muted small">
+                        To protect belongings from unauthorized claims, you must answer challenge questions only the genuine owner can know. 
+                        Your answers are kept strictly confidential and visible ONLY to authorized security administrators.
+                    </p>
+                </div>
+
+                <!-- Found Item Target Summary -->
+                <div class="p-3 bg-light rounded border mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small font-monospace">CLAIMING FOUND ITEM #{{ report.id }}</span>
+                        <span class="badge bg-info-subtle text-info-emphasis">{{ report.category }}</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">{{ report.item_name }}</h5>
+                    <div class="text-muted small mb-2">{{ report.description }}</div>
+                    <div class="small text-secondary">
+                        <span>📍 Found at: {{ report.location }}</span> · <span>📅 Date: {{ report.date_occurred }}</span>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('claims.submit_claim', report_id=report.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">
+                            Challenge 1: Unique Distinguishing Mark or Serial Identifier *
+                        </label>
+                        <textarea class="form-control" name="distinguishing_proof" rows="3" required placeholder="Describe any hidden stickers, custom engraving, serial number digits, specific scratches, or manufacturing tags..."></textarea>
+                        <div class="form-text small">
+                            Example: "Has a Linux Tux sticker on bottom left corner and Dell serial tag ends in 8X99."
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">
+                            Challenge 2: Hidden Contents or Pouch Details
+                        </label>
+                        <textarea class="form-control" name="contents_proof" rows="2" placeholder="If this is a wallet, backpack, or case, what exact items, cards, bills, or accessories were inside?"></textarea>
+                        <div class="form-text small">
+                            Example: "Inside left pocket has a student bus pass ending in 4092 and a folded emergency $20 bill."
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">
+                            Challenge 3: Screen Wallpaper / Lock Pattern / Custom Keychain
+                        </label>
+                        <input type="text" class="form-control" name="custom_marks" placeholder="e.g. Wallpaper is starry night, or keychain is a blue brass bottle opener">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">
+                            Circumstances of Loss
+                        </label>
+                        <input type="text" class="form-control" name="loss_context" placeholder="e.g. Left on table 14 while rushing to 2:15 PM Database Systems lecture">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-danger">
+                            Your Contact Phone Number & Student ID *
+                        </label>
+                        <input type="text" class="form-control" name="contact_phone" required placeholder="e.g. +1 (555) 019-2834 / Student ID: 2026-CS-8812">
+                        <div class="form-text small">
+                            🔒 Administrators will use this to contact you for the identity check and physical handover.
+                        </div>
+                    </div>
+
+                    <div class="alert alert-secondary py-2 px-3 small mb-4">
+                        ℹ️ <strong>Zero Automatic Release:</strong> System match scores do NOT automatically release items. An administrator will inspect your confidential responses against the physical item.
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Submit Confidential Claim for Review</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

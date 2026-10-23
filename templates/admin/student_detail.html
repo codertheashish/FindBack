@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}{{ student.name }} – Student – FindBack Admin{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="mb-3"><a href="{{ url_for('admin.students') }}" class="text-decoration-none small text-muted">&larr; Back to students</a></div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="badge bg-secondary font-monospace mb-1">{{ student.roll_number or 'NO ROLL NUMBER' }}</span>
+                        <h3 class="fw-bold text-dark mb-0">{{ student.name }}</h3>
+                    </div>
+                    <div class="text-end">
+                        {% if student.is_deleted %}<span class="badge bg-dark">Deleted</span>
+                        {% elif student.is_active %}<span class="badge bg-success">Active</span>
+                        {% else %}<span class="badge bg-secondary">Deactivated</span>{% endif %}
+                    </div>
+                </div>
+                <dl class="row small mt-3 mb-0">
+                    <dt class="col-5 text-muted">Class / branch</dt><dd class="col-7">{{ student.class_branch or '—' }}</dd>
+                    <dt class="col-5 text-muted">Year / batch</dt><dd class="col-7">{{ student.academic_year or '—' }}</dd>
+                    <dt class="col-5 text-muted">Registered mobile</dt>
+                    <dd class="col-7 font-monospace">{% if can_private %}{{ student.mobile or '—' }}{% else %}{{ student.mobile|mask_mobile }}{% endif %}</dd>
+                    <dt class="col-5 text-muted">Account created</dt><dd class="col-7">{{ student.created_at[:19] }}</dd>
+                    <dt class="col-5 text-muted">Last updated</dt><dd class="col-7">{{ (student.updated_at or student.created_at)[:19] }}</dd>
+                    <dt class="col-5 text-muted">Password</dt>
+                    <dd class="col-7">
+                        {% if student.must_change_password %}<span class="badge bg-warning text-dark">Initial password – change pending</span>
+                        {% else %}<span class="badge bg-success-subtle text-success-emphasis">Changed by student</span>{% endif %}
+                        {% if student.password_changed_at %}<div class="text-muted">changed {{ student.password_changed_at[:19] }}</div>{% endif %}
+                    </dd>
+                    {% if student.password_reset_at %}
+                    <dt class="col-5 text-muted">Last reset</dt>
+                    <dd class="col-7">{{ student.password_reset_at[:19] }}<div class="text-muted">by {{ resetter.name if resetter else 'unknown' }}{% if resetter and resetter.username %} ({{ resetter.username }}){% endif %}</div></dd>
+                    {% endif %}
+                </dl>
+                <div class="text-muted small mt-2">Passwords are never displayed — only whether a change is pending.</div>
+            </div>
+
+            {% if can('students.manage') or can('students.reset_password') %}
+            <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4 border-top border-danger border-3">
+                <h6 class="fw-bold text-danger text-uppercase small mb-3">Account actions</h6>
+                {% if can('students.manage') %}
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    {% if not student.is_deleted %}
+                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.student_edit', student_id=student.id) }}">Edit details</a>
+                    <form method="POST" action="{{ url_for('admin.student_toggle_active', student_id=student.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="active" value="{{ 0 if student.is_active else 1 }}">
+                        <button class="btn btn-sm {{ 'btn-outline-warning' if student.is_active else 'btn-outline-success' }}" type="submit">{{ 'Deactivate' if student.is_active else 'Activate' }}</button>
+                    </form>
+                    {% else %}
+                    <form method="POST" action="{{ url_for('admin.student_restore', student_id=student.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-sm btn-outline-success" type="submit">Restore account</button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if can('students.reset_password') and not student.is_deleted and student.roll_number and student.mobile %}
+                <details class="mb-3">
+                    <summary class="fw-semibold small">Forgot password? Reset it…</summary>
+                    <form method="POST" action="{{ url_for('admin.student_reset_password', student_id=student.id) }}" class="mt-2" onsubmit="return confirm('Reset the password for {{ student.name }}? Their reports and data stay as they are.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="small text-muted mb-2">Works without knowing the current password. Reports, claims and history are not touched. The student's other logged-in devices are signed out.</div>
+                        <input class="form-control form-control-sm mb-2" type="password" name="new_password" maxlength="128" placeholder="New password (leave empty = registered mobile number)" autocomplete="new-password">
+                        <input class="form-control form-control-sm mb-2" name="reason" maxlength="200" placeholder="Note (optional) e.g. ID card checked">
+                        {% if reauth %}<input class="form-control form-control-sm mb-2" type="password" name="admin_password" required placeholder="Your own password" autocomplete="current-password">{% endif %}
+                        <button class="btn btn-sm btn-danger" type="submit">Reset password</button>
+                    </form>
+                </details>
+                {% endif %}
+
+                {% if can('students.manage') and not student.is_deleted %}
+                <details>
+                    <summary class="fw-semibold small text-danger">Delete account…</summary>
+                    <form method="POST" action="{{ url_for('admin.student_delete', student_id=student.id) }}" class="mt-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="small text-muted mb-2">
+                            {% if history.deps.reports or history.deps.claims or history.deps.status_changes %}
+                            This student has history ({{ history.deps.reports }} reports, {{ history.deps.claims }} claims), so the account will be <strong>archived (soft-deleted)</strong>, not erased.
+                            {% else %}
+                            This student has no history, so the account will be permanently erased.
+                            {% endif %}
+                        </div>
+                        <input class="form-control form-control-sm mb-2 font-monospace" name="confirm_roll" required placeholder="Type roll number {{ student.roll_number }} to confirm" autocomplete="off">
+                        <button class="btn btn-sm btn-outline-danger" type="submit">Delete account</button>
+                    </form>
+                </details>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-7">
+            {% for title, items, kind in [('Lost-item reports', history.lost, 'lost'), ('Found-item reports', history.found, 'found')] %}
+            <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+                <h5 class="fw-bold text-dark mb-3">{{ title }} ({{ items|length }})</h5>
+                {% if items %}
+                <div class="table-responsive"><table class="table table-sm align-middle small mb-0">
+                    <thead class="table-light"><tr><th>ID</th><th>Item</th><th>Category</th><th>Date</th><th>Status</th></tr></thead>
+                    <tbody>
+                    {% for r in items %}
+                        <tr>
+                            <td class="font-monospace">#{{ r.id }}</td>
+                            <td><a href="{{ url_for('reports.detail', report_id=r.id) }}">{{ r.item_name }}</a></td>
+                            <td>{{ r.category }}</td>
+                            <td>{{ r.date_occurred }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ r.status }}</span></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody></table></div>
+                {% else %}<div class="text-muted small">None.</div>{% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="card border-0 shadow-sm p-4 bg-white rounded-3 mb-4">
+                <h5 class="fw-bold text-dark mb-3">Ownership claims filed ({{ history.claims|length }})</h5>
+                {% if history.claims %}
+                <ul class="small mb-0">
+                    {% for c in history.claims %}<li>Claim #{{ c.id }} on <a href="{{ url_for('reports.detail', report_id=c.report_id) }}">{{ c.item_name }}</a> – <strong>{{ c.status }}</strong> ({{ c.created_at[:10] }})</li>{% endfor %}
+                </ul>
+                {% else %}<div class="text-muted small">None.</div>{% endif %}
+            </div>
+
+            {% if can('audit.view') %}
+            <div class="card border-0 shadow-sm p-4 bg-white rounded-3">
+                <div class="d-flex justify-content-between"><h5 class="fw-bold text-dark mb-3">Recent activity</h5>
+                    {% if student.roll_number %}<a class="small" href="{{ url_for('admin.activity', roll=student.roll_number) }}">View all</a>{% endif %}</div>
+                <ul class="small mb-0">
+                    {% for a in activity_rows %}<li><span class="font-monospace">{{ a.timestamp[:19] }}</span> – {{ labels.get(a.action, a.action) }}{% if a.item_name %}: {{ a.item_name }}{% endif %}</li>
+                    {% else %}<li class="text-muted">No activity recorded.</li>{% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

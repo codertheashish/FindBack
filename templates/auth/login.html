@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In – FindBack{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-5">
+            <div class="card border-0 shadow-sm p-4 bg-white rounded-3">
+                <div class="text-center mb-3">
+                    <h3 class="fw-bold text-dark">FindBack Campus Portal</h3>
+                    <p class="text-muted small mb-0">Sign in with your college credentials</p>
+                </div>
+
+                <ul class="nav nav-pills nav-fill mb-4" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link {% if portal == 'student' %}active{% endif %}" href="{{ url_for('auth.login', portal='student', next=request.args.get('next')) }}">Student</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if portal == 'staff' %}active{% endif %}" href="{{ url_for('auth.login', portal='staff', next=request.args.get('next')) }}">Admin / Teacher</a>
+                    </li>
+                </ul>
+
+                <form method="POST" action="{{ url_for('auth.login', portal=portal, next=request.args.get('next')) }}" autocomplete="off">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="portal" value="{{ portal }}">
+
+                    <div class="mb-3">
+                        {% if portal == 'student' %}
+                            <label for="username" class="form-label fw-semibold small">Roll Number</label>
+                            <input type="text" class="form-control" id="username" name="username" required maxlength="40"
+                                   placeholder="e.g. 21CS001" value="{{ identifier }}" autofocus autocapitalize="characters">
+                        {% else %}
+                            <label for="username" class="form-label fw-semibold small">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required maxlength="40"
+                                   placeholder="staff username" value="{{ identifier }}" autofocus autocapitalize="none">
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label fw-semibold small">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required maxlength="128"
+                               placeholder="••••••••" autocomplete="current-password">
+                        {% if portal == 'student' %}
+                        <div class="form-text small">First time? Your initial password is the mobile number registered with the college. You will be asked to change it immediately.</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Simple robot checkbox. This is a lightweight UX check, not a provider-backed CAPTCHA. -->
+                    <div class="mb-3">
+                        {% if captcha.provider == 'checkbox' %}
+                            <label class="border rounded-3 p-3 d-flex align-items-center gap-3 w-100" for="robot_check" style="cursor:pointer; background:#f8fafc;">
+                                <input class="form-check-input mt-0" type="checkbox" id="robot_check" name="robot_check" value="on" required style="width:20px;height:20px;flex-shrink:0;">
+                                <span class="text-dark">I'm not a robot</span>
+                                <span class="ms-auto text-muted" aria-hidden="true" style="font-size:1.5rem;">☑</span>
+                            </label>
+                        {% elif captcha.provider == 'local' %}
+                            <label for="captcha_answer" class="form-label fw-semibold small">Type the characters shown</label>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div id="captcha-image" class="border rounded overflow-hidden">{{ captcha.svg|safe }}</div>
+                                <button type="button" id="captcha-refresh" class="btn btn-outline-secondary" title="New image" aria-label="Get a new CAPTCHA image" data-url="{{ url_for('auth.captcha_new') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                                </button>
+                            </div>
+                            <input type="hidden" name="captcha_token" value="{{ captcha.token }}">
+                            <input type="text" class="form-control" id="captcha_answer" name="captcha_answer" required maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="Enter the code">
+                        {% elif captcha.provider in ('turnstile', 'recaptcha', 'hcaptcha') %}
+                            <div class="{{ captcha.widget_class }}" data-sitekey="{{ captcha.site_key }}"></div>
+                            <script src="{{ captcha.script_url }}" async defer></script>
+                        {% else %}
+                            <div class="alert alert-warning small py-2 mb-0">CAPTCHA is disabled (development mode only).</div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Sign In</button>
+                </form>
+
+                <div class="mt-4 pt-3 border-top text-center text-muted small">
+                    Accounts are created by the college administrator. Forgot your password? Contact the admin office with your ID card.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

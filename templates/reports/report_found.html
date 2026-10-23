@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Report Found Belonging – FindBack{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm p-4 bg-white rounded-3">
+                <div class="mb-4">
+                    <span class="badge bg-info-subtle text-info-emphasis font-monospace mb-1">FOUND ITEM REGISTRATION</span>
+                    <h3 class="fw-bold text-dark">Report a Found Belonging</h3>
+                    <p class="text-muted small">
+                        Help reunite an item with its rightful owner. You can keep at least one secret detail to verify fraudulent vs genuine claims.
+                    </p>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data" action="{{ url_for('reports.report_found') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Item Title / Name *</label>
+                            <input type="text" class="form-control" name="item_name" required placeholder="e.g. Silver Dell Laptop, Brown Trifold Wallet, Blue Water Bottle">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Category *</label>
+                            <select class="form-select" name="category" required>
+                                <option value="" disabled selected>Select category</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat }}">{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Public Visible Description *</label>
+                            <textarea class="form-control" name="description" rows="3" required placeholder="General visible characteristics (color, brand name, exterior condition)..."></textarea>
+                            <div class="form-text small">Do not put secret identifying details here; use the confidential box below instead!</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Date Found *</label>
+                            <input type="date" class="form-control" name="date_occurred" required value="{{ today_str }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Exact Location Found *</label>
+                            <input type="text" class="form-control" name="location" required placeholder="e.g. Library 2nd Floor desk 14, Cafeteria booth #4">
+                        </div>
+
+                        <div class="col-12">
+                            <div class="p-3 bg-light rounded border">
+                                <label class="form-label fw-bold small text-info-emphasis mb-1">
+                                    Confidential Distinguishing Features <span class="badge bg-secondary ms-1">Protected</span>
+                                </label>
+                                <textarea class="form-control" name="distinguishing_features" rows="2" placeholder="e.g. Serial number DL-8X99, Linux penguin sticker on keyboard palmrest, transit card #4092 inside, small emergency cash folded in secret flap"></textarea>
+                                <div class="form-text small text-muted mt-2">
+                                    🔒 <strong>Anti-Fraud Shield:</strong> This field is completely hidden from public users. When claimants submit an ownership claim, administrators compare their answers against this confidential baseline!
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-muted">
+                                Finder / Security Contact or Storage Dropoff Location
+                            </label>
+                            <input type="text" class="form-control" name="private_contact" placeholder="e.g. Deposited at Campus Security Desk or Locker #12">
+                            <div class="form-text small">Never shown to public casual visitors.</div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Photo of Item (Optional)</label>
+                            <input type="file" class="form-control" name="image" accept=".png,.jpg,.jpeg,.webp">
+                        </div>
+
+                        <div class="col-12 pt-3">
+                            <button type="submit" class="btn btn-info px-4 py-2 text-white fw-semibold w-100">Publish Found Report Safely</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

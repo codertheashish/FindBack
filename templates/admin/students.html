@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Student Accounts – FindBack Admin{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-3 border-bottom">
+        <div>
+            <span class="badge bg-danger font-monospace mb-1">STUDENT ACCOUNTS</span>
+            <h2 class="fw-bold text-dark mb-0">Student Management</h2>
+            <div class="text-muted small">Accounts are created by administrators; students sign in with their roll number.</div>
+        </div>
+        {% if can('students.manage') %}
+        <a href="{{ url_for('admin.student_new') }}" class="btn btn-primary fw-semibold">+ Add Student</a>
+        {% endif %}
+    </div>
+
+    <div class="card border-0 shadow-sm p-3 bg-white rounded-3 mb-3">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold">Search by roll number or name</label>
+                <input type="text" class="form-control" name="q" value="{{ q }}" maxlength="60" placeholder="21CS001 or Priya">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Account state</label>
+                <select name="status" class="form-select">
+                    {% for value, label in [('', 'All (not deleted)'), ('active', 'Active'), ('inactive', 'Deactivated'), ('password_pending', 'Password change pending'), ('legacy', 'Legacy (needs roll number)'), ('deleted', 'Deleted / archived')] %}
+                        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-dark w-100" type="submit">Search</button>
+                <a class="btn btn-light border" href="{{ url_for('admin.students') }}">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="card border-0 shadow-sm p-3 bg-white rounded-3">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr><th>Roll No.</th><th>Name</th><th>Class / Branch</th><th>Mobile</th><th>State</th><th>Lost</th><th>Found</th><th>Created</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for s in rows %}
+                    <tr>
+                        <td class="font-monospace fw-semibold">{{ s.roll_number or '—' }}</td>
+                        <td>{{ s.name }}</td>
+                        <td>{{ s.class_branch or '—' }}{% if s.academic_year %} <span class="text-muted">· {{ s.academic_year }}</span>{% endif %}</td>
+                        <td class="font-monospace">{% if can_private %}{{ s.mobile or '—' }}{% else %}{{ s.mobile|mask_mobile }}{% endif %}</td>
+                        <td>
+                            {% if s.is_deleted %}<span class="badge bg-dark">Deleted</span>
+                            {% elif not s.roll_number %}<span class="badge bg-warning text-dark">Legacy</span>
+                            {% elif s.is_active %}<span class="badge bg-success">Active</span>
+                            {% else %}<span class="badge bg-secondary">Deactivated</span>{% endif %}
+                            {% if s.must_change_password and not s.is_deleted %}<span class="badge bg-info text-dark">Password change pending</span>{% endif %}
+                        </td>
+                        <td>{{ s.lost_count }}</td>
+                        <td>{{ s.found_count }}</td>
+                        <td class="text-muted">{{ s.created_at[:10] }}</td>
+                        <td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.student_detail', student_id=s.id) }}">Open</a></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="text-center text-muted py-4">No students match your search.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'admin/_pagination.html' %}
+    </div>
+</div>
+{% endblock %}
