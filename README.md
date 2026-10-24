@@ -6,30 +6,6 @@ Privacy-first lost & found portal for a college campus, now with **college-ERP s
 
 ---
 
-## Production deployment: important database note
-
-**Do not deploy this SQLite-backed version to Vercel for live student accounts.** Vercel Functions use an ephemeral, per-instance filesystem; a SQLite file in `/tmp` can be empty on a cold start or differ between instances. That is why students may disappear and logins may behave inconsistently. Environment variables cannot make that SQLite file persistent.
-
-### Recommended: Render with a persistent disk
-
-This repository includes `render.yaml` configured for a Render web service with a persistent disk mounted at `/var/data`. The database is `/var/data/findback.sqlite`, uploads are stored under `/var/data/uploads`, and the service uses Gunicorn. A persistent disk requires a paid Render instance; do not remove the disk or change its mount path after real data has been added.
-
-1. Push this project (without `.env` or any local database file) to your GitHub repository.
-2. In Render, choose **New → Blueprint** and select the repository containing `render.yaml`.
-3. When asked for `SEED_ADMIN_PASSWORD`, enter a strong password you have not published anywhere. The first admin username is `codertheashish`; the password is the value you enter in Render. Do not use a password already posted in screenshots or committed files.
-4. Deploy and open the Render URL. Sign in to the **Admin / Teacher** portal. Add a test student, sign out, sign in as that student, and verify the student still appears after a redeploy.
-5. Keep the persistent disk attached. Do not set `DATABASE_PATH` to `/tmp` or use the old Vercel URL for production data.
-
-### Existing local students
-
-The local `instance/findback.sqlite` file is intentionally not shipped in this deployment ZIP or committed to GitHub because it contains account records. Before switching production, export/record the student roster securely and recreate/import the required students into the persistent deployment. The database on Vercel and the local database are separate; students created in one do not automatically exist in the other. Do not delete the local database until you have verified the new deployment.
-
-### Security
-
-Never commit `.env`, `instance/findback.sqlite`, or student data. Rotate any signing key or password that has been exposed in a screenshot, chat, or repository. `CAPTCHA_PROVIDER=checkbox` is a simple checkbox UI, not a server-side bot challenge; use Cloudflare Turnstile or Google reCAPTCHA for stronger bot protection if required.
-
----
-
 ## 1. Run on Windows (PowerShell)
 
 ```powershell
@@ -75,7 +51,7 @@ Sign in on the **Admin / Teacher** tab. Teachers are created from *Admin → Tea
 
 ## 4. First-login workflow for students
 
-1. Student opens the **Student** tab, enters roll number + registered mobile number + a simple “I’m not a robot” checkbox.
+1. Student opens the **Student** tab, enters roll number + registered mobile number + CAPTCHA.
 2. They are redirected to *Change password*; no other page works until it is done.
 3. They enter the current password (the mobile number), a new password (≥ 8 chars, letter + digit, not common,
    not their roll/mobile number) and confirm it.
@@ -114,7 +90,7 @@ Example: `TEACHER_PERMISSIONS=reports.view_all,students.view,audit.view` in `.en
 | Area | Implementation |
 |---|---|
 | Password storage | Werkzeug scrypt hashes; legacy PBKDF2 hashes still verify and are upgraded at next login |
-| Robot check | `CAPTCHA_PROVIDER=checkbox` (default) shows a single “I’m not a robot” checkbox. This is only a lightweight UI check, not a real bot-proof CAPTCHA. Existing `local`, `turnstile`, `recaptcha`, and `hcaptcha` options remain available. CSRF protection and login/IP throttling remain enabled. |
+| CAPTCHA | `CAPTCHA_PROVIDER=local` (default, offline, server-generated image; answer kept only as an HMAC, single-use, 5-minute expiry) or `turnstile` / `recaptcha` / `hcaptcha` (need `CAPTCHA_SITE_KEY` + `CAPTCHA_SECRET_KEY` and internet; verified server-side, fails closed). `disabled` works only in development/testing |
 | Brute force | 5 failed logins per account → 15-minute lockout (even for the right password); per-IP throttle; CAPTCHA failures never lock an account; all configurable |
 | Sessions | fresh session on login, 8 h lifetime, 30 min idle timeout, HttpOnly + SameSite cookies; `session_version` ends sessions on password change/reset, deactivation and deletion |
 | CSRF | token on every POST form (`CSRF_ENABLED`) |
@@ -144,7 +120,7 @@ Students are stored with role value `user` (the historical value) and shown as "
 
 * Because the initial password is the mobile number the admin typed, the admin knows it **until the student's first login**
   (the forced change limits the window). Mobile numbers are masked for staff without `private.view`.
-* The default single-checkbox robot check is not bot-proof; automated clients can submit it. For stronger production protection, configure Cloudflare Turnstile or another server-verified CAPTCHA provider.
+* The local CAPTCHA is an offline image challenge; determined bots can OCR it. Use Turnstile/reCAPTCHA/hCaptcha in production.
 * Lockout is per account identifier (an attacker who solves CAPTCHAs could temporarily lock a roll number) plus per-IP limits.
 * `X-Forwarded-For` is trusted only when `TRUST_PROXY_HEADERS=1`.
 * Only students file reports and claims; teachers/admins monitor and moderate.

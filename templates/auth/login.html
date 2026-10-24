@@ -46,15 +46,9 @@
                         {% endif %}
                     </div>
 
-                    <!-- Simple robot checkbox. This is a lightweight UX check, not a provider-backed CAPTCHA. -->
+                    <!-- CAPTCHA (always re-verified on the server) -->
                     <div class="mb-3">
-                        {% if captcha.provider == 'checkbox' %}
-                            <label class="border rounded-3 p-3 d-flex align-items-center gap-3 w-100" for="robot_check" style="cursor:pointer; background:#f8fafc;">
-                                <input class="form-check-input mt-0" type="checkbox" id="robot_check" name="robot_check" value="on" required style="width:20px;height:20px;flex-shrink:0;">
-                                <span class="text-dark">I'm not a robot</span>
-                                <span class="ms-auto text-muted" aria-hidden="true" style="font-size:1.5rem;">☑</span>
-                            </label>
-                        {% elif captcha.provider == 'local' %}
+                        {% if captcha.provider == 'local' %}
                             <label for="captcha_answer" class="form-label fw-semibold small">Type the characters shown</label>
                             <div class="d-flex align-items-center gap-2 mb-2">
                                 <div id="captcha-image" class="border rounded overflow-hidden">{{ captcha.svg|safe }}</div>
@@ -63,10 +57,13 @@
                                 </button>
                             </div>
                             <input type="hidden" name="captcha_token" value="{{ captcha.token }}">
-                            <input type="text" class="form-control" id="captcha_answer" name="captcha_answer" required maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="Enter the code">
+                            <input type="text" class="form-control" id="captcha_answer" name="captcha_answer" required
+                                   maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="Enter the code">
                         {% elif captcha.provider in ('turnstile', 'recaptcha', 'hcaptcha') %}
                             <div class="{{ captcha.widget_class }}" data-sitekey="{{ captcha.site_key }}"></div>
                             <script src="{{ captcha.script_url }}" async defer></script>
+                        {% elif captcha.provider == 'unconfigured' %}
+                            <div class="alert alert-danger small py-2 mb-0">Robot verification is not set up on the server. The administrator must set CAPTCHA_SITE_KEY and CAPTCHA_SECRET_KEY, then redeploy.</div>
                         {% else %}
                             <div class="alert alert-warning small py-2 mb-0">CAPTCHA is disabled (development mode only).</div>
                         {% endif %}

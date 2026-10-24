@@ -34,8 +34,3 @@ htmlcov/
 # Backups / secrets created by the migration and first run
 instance/*.bak
 instance/.secret_key
-
-# Never commit secrets or live account databases
-.env
-instance/*.sqlite
-instance/*.db

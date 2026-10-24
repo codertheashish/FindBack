@@ -81,22 +81,23 @@ _EXTERNAL = {
 
 
 def captcha_provider():
+    """Default is the "I'm not a robot" box (reCAPTCHA). The old image CAPTCHA ('local') is used only when
+    CAPTCHA_PROVIDER=local is set explicitly AND the app is not running on Vercel. If the box is selected but
+    its keys are missing we do NOT silently fall back to an image: we return 'unconfigured' and login fails closed."""
     cfg = current_app.config
-    provider = (cfg.get("CAPTCHA_PROVIDER") or "checkbox").lower()
+    provider = (cfg.get("CAPTCHA_PROVIDER") or "recaptcha").lower()
     dev_mode = cfg.get("TESTING") or current_app.debug or os.getenv("FLASK_ENV") == "development"
-    if provider == "checkbox":
-        return "checkbox"
-    if provider == "disabled":
-        if dev_mode:
-            return "disabled"
-        log.warning("CAPTCHA_PROVIDER=disabled is ignored outside development/testing; using 'local'.")
+    on_vercel = bool(os.getenv("VERCEL"))
+    if provider == "local" and not on_vercel:
         return "local"
-    if provider in _EXTERNAL:
-        if cfg.get("CAPTCHA_SITE_KEY") and cfg.get("CAPTCHA_SECRET_KEY"):
-            return provider
-        log.warning("CAPTCHA provider '%s' selected but keys are missing; using 'local'.", provider)
-        return "local"
-    return "local"
+    if provider == "disabled" and dev_mode and not on_vercel:
+        return "disabled"
+    if provider not in _EXTERNAL:          # 'local' on Vercel, 'disabled' in production, unknown values
+        provider = "recaptcha"
+    if cfg.get("CAPTCHA_SITE_KEY") and cfg.get("CAPTCHA_SECRET_KEY"):
+        return provider
+    log.warning("CAPTCHA provider '%s' needs CAPTCHA_SITE_KEY and CAPTCHA_SECRET_KEY; login is blocked until set.", provider)
+    return "unconfigured"
 
 
 def _captcha_hash(token, answer):
@@ -159,8 +160,6 @@ def new_captcha_challenge():
     provider = captcha_provider()
     ctx = {"provider": provider, "token": None, "svg": None, "site_key": current_app.config.get("CAPTCHA_SITE_KEY"),
            "script_url": None, "widget_class": None}
-    if provider == "checkbox":
-        return ctx
     if provider == "local":
         answer = "".join(secrets.choice(_CAPTCHA_ALPHABET) for _ in range(5))
         token = _make_captcha_token(answer)
@@ -175,9 +174,8 @@ def verify_captcha(form):
     provider = captcha_provider()
     if provider == "disabled":
         return True
-    if provider == "checkbox":
-        # Lightweight checkbox UX only; this is not a bot-proof CAPTCHA.
-        return (form.get("robot_check") or "").strip().lower() in ("on", "true", "1", "yes")
+    if provider == "unconfigured":
+        return False
     if provider == "local":
         token = (form.get("captcha_token") or "")[:200]
         answer = (form.get("captcha_answer") or "").strip()

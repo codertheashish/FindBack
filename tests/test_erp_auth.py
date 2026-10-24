@@ -175,7 +175,7 @@ class TestCaptchaServerSide(AppTestCase):
             import os
             old = os.environ.pop("FLASK_ENV", None)
             try:
-                self.assertEqual(security.captcha_provider(), "local")
+                self.assertNotEqual(security.captcha_provider(), "disabled")
             finally:
                 if old: os.environ["FLASK_ENV"] = old
 

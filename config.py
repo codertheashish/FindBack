@@ -109,14 +109,13 @@ class Config:
     # ---- CSRF ----
     CSRF_ENABLED = _env_bool("CSRF_ENABLED", True)
 
-    # ---- CAPTCHA / robot check ----
-    # checkbox   : simple "I'm not a robot" checkbox (UI check only, not bot-proof)
+    # ---- CAPTCHA ----
     # local      : server-generated image challenge, answer verified server-side (no internet needed)
     # turnstile  : Cloudflare Turnstile   (needs CAPTCHA_SITE_KEY / CAPTCHA_SECRET_KEY + internet)
     # recaptcha  : Google reCAPTCHA v2    (needs keys + internet)
     # hcaptcha   : hCaptcha               (needs keys + internet)
     # disabled   : only honoured when FLASK_ENV=development or TESTING; ignored in production
-    CAPTCHA_PROVIDER = os.getenv("CAPTCHA_PROVIDER", "checkbox").strip().lower()
+    CAPTCHA_PROVIDER = os.getenv("CAPTCHA_PROVIDER", "recaptcha").strip().lower()
     CAPTCHA_SITE_KEY = os.getenv("CAPTCHA_SITE_KEY", "")
     CAPTCHA_SECRET_KEY = os.getenv("CAPTCHA_SECRET_KEY", "")
     CAPTCHA_TTL_SECONDS = 300
