@@ -269,3 +269,15 @@ class TestCsrf(AppTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSilentPasswordMode(AppTestCase):
+    extra_config = {"PASSWORD_CHANGE_MODE": "silent"}
+
+    def test_student_goes_straight_in_without_password_prompt(self):
+        c = self.app.test_client()
+        r = self.login(c, "21cs001", MOBILE_A)
+        self.assertEqual(r.status_code, 302)
+        self.assertNotIn("/auth/change-password", r.headers["Location"])
+        # can use the site normally right after the first login
+        self.assertEqual(c.get("/reports/my-dashboard").status_code, 200)

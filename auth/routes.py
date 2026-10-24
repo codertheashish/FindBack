@@ -127,7 +127,8 @@ def login():
     models.log_activity('auth.login', user['id'], entity_type='user', entity_id=user['id'],
                         target_user_id=user['id'], ip=ip, details=f"Signed in via {portal} portal.")
 
-    if user['must_change_password']:
+    silent = (current_app.config.get('PASSWORD_CHANGE_MODE') or '').lower() == 'silent'
+    if user['must_change_password'] and not silent:
         if _forced():
             flash('Welcome! For your security you must set a new password before continuing.', 'warning')
         else:

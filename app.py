@@ -36,10 +36,10 @@ def create_app(test_config=None):
     # Initialize database and apply migrations
     init_db(app.config["DATABASE"])
 
-    # Vercel: the /tmp database starts empty on every cold start, so make sure
-    # an admin account exists (username: SEED_ADMIN_USERNAME or "admin",
+    # Make sure an admin account exists on a fresh database (Vercel /tmp, new PythonAnywhere install).
+    # Username: SEED_ADMIN_USERNAME (default "admin"),
     # password: SEED_ADMIN_PASSWORD).
-    if os.environ.get("VERCEL") and os.getenv("SEED_ADMIN_PASSWORD"):
+    if os.getenv("SEED_ADMIN_PASSWORD") and not app.config.get("TESTING"):
         from models import create_staff, ROLE_ADMIN
         _conn = get_db(app.config["DATABASE"])
         try:
