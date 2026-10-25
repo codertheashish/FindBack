@@ -1,255 +1,277 @@
-# FindBack – Lost & Found Verification Portal (SS-15) · Flask backend
+# 🔍 FindBack — Lost & Found Portal
 
-Privacy-first lost & found portal for a college campus, now with **college-ERP style login**
-(roll number + password, CAPTCHA, lockout), **role-based access** (Student / Teacher / Admin),
-**admin student management**, and a **searchable, append-only activity history**.
+A web-based Lost & Found Portal designed to help students report lost belongings, share found items, and connect with the people who own them.
+
+FindBack aims to make the process of finding lost items easier, faster, and more organized within a college campus. Instead of relying only on verbal announcements or scattered messages, students can use a centralized platform to report and search for lost and found belongings.
 
 ---
 
-## 1. Run on Windows (PowerShell)
+## 🌐 Project Overview
 
-```powershell
-cd FindBack\findback
+FindBack provides a common platform where students can report lost items, submit details about found items, and manage claims. Teachers and administrators can help manage reports and verify claims to maintain a more reliable lost-and-found process.
+
+The project was developed during **Parakram Hackathon at SRIMT** by Team Hack Hawk.
+
+---
+
+## ✨ Key Features
+
+- 🔍 **Lost & Found Reporting** — Report lost belongings and items that have been found.
+- 📝 **Item Details** — Provide relevant information to help identify belongings.
+- 📋 **Report Management** — Organize and manage lost-and-found reports.
+- 🤝 **Claim Management** — Allow users to claim items that belong to them.
+- 👨‍🎓 **Student Portal** — Provide students with access to the lost-and-found system.
+- 👨‍🏫 **Teacher Module** — Support authorized teacher-level activities.
+- 🛡️ **Admin Dashboard** — Manage reports, claims, and relevant administrative actions.
+- 🔐 **Authentication** — Support controlled access to portal functionality.
+- 🤖 **CAPTCHA Verification** — Help distinguish human users from automated traffic.
+- 📱 **Responsive Interface** — Designed for convenient use across different screen sizes.
+
+---
+
+## 🛠️ Tech Stack
+
+| Technology | Purpose |
+|---|---|
+| Python | Backend application logic |
+| Flask | Web application framework and routing |
+| SQLite | Database for storing application records |
+| Werkzeug | Password hashing and security-related utilities |
+| Jinja2 | Dynamic HTML rendering |
+| HTML5 | Web page structure |
+| CSS3 | Styling and responsive layouts |
+| JavaScript | Client-side interactions |
+| Bootstrap | UI components and responsive design |
+| Google reCAPTCHA | CAPTCHA-based verification, where configured |
+
+---
+
+## 👥 User Roles
+
+### 🎓 Student
+- Access the student portal.
+- Report lost belongings.
+- Submit found-item reports.
+- View relevant reports and use the claim functionality.
+- Track the status of their submissions where supported.
+
+### 👨‍🏫 Teacher
+- Access authorized teacher functionality.
+- Assist with the management of relevant reports and claims, according to assigned permissions.
+
+### 🛡️ Administrator
+- Manage the portal and its records.
+- Review reported items and claims.
+- Verify information before taking appropriate action.
+- Update claim or report statuses.
+- Maintain the platform's administrative operations.
+
+---
+
+## 🔄 How FindBack Works
+
+1. **Report an Item:** A student submits the details of a lost or found item.
+2. **Browse Reports:** Users check the available reports to identify potentially matching belongings.
+3. **Submit a Claim:** A user submits a claim for an item they believe belongs to them.
+4. **Verification:** The authorized administrator or responsible staff member reviews the claim and supporting details.
+5. **Status Update:** The authorized person updates the report or claim status after verification.
+6. **Resolution:** The item can be returned to its rightful owner according to the institution's process.
+
+*Note: Exact permissions and status transitions depend on the application's implemented rules and institutional policies.*
+
+---
+
+## 📂 Project Structure
+
+The project is built around a Flask-based backend, HTML templates, static frontend assets, and a database.
+
+A typical structure for this application may look like:
+
+```text
+FindBack/
+│
+├── app.py
+├── requirements.txt
+├── .env
+├── templates/
+├── static/
+├── instance/
+├── manage.py
+└── README.md
+```
+
+*The structure above is illustrative. Keep only the files and directories that actually exist in your repository. Never commit your `.env` file or production secrets.*
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+Make sure you have:
+
+- Python 3.12 or another version supported by your project.
+- Git installed on your system.
+- A code editor such as Visual Studio Code.
+- The environment variables required by the application.
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/codertheashish/FindBack.git
+```
+
+### 2. Open the Project Folder
+
+```bash
+cd FindBack
+```
+
+### 3. Create a Virtual Environment
+
+**Windows:**
+
+```bash
 python -m venv venv
-.\venv\Scripts\Activate.ps1
+venv\Scripts\activate
+```
+
+### 4. Install Dependencies
+
+```bash
 pip install -r requirements.txt
-copy .env.example .env            # optional; a random SECRET_KEY is generated if you leave it empty
-
-python manage.py migrate          # creates / upgrades the database (existing data is kept and backed up)
-python manage.py create-admin     # first administrator (prompts for a password; nothing is hard-coded)
-python tests\run_tests.py         # run the test suite
-python app.py                     # http://127.0.0.1:5000
 ```
 
-Optional demo data: `python seed.py` (3 demo students whose initial password is their mobile number; the demo admin
-password comes from `SEED_ADMIN_PASSWORD` or is generated and printed once).
+### 5. Configure Environment Variables
 
-Production: use a real WSGI server (e.g. `pip install waitress`, then `waitress-serve --call app:create_app`), set
-`SECRET_KEY`, `SESSION_COOKIE_SECURE=1` (HTTPS) and keep `FLASK_DEBUG=0`.
+Create a local `.env` file and configure the environment variables required by your application.
 
-## 2. First administrator (secure bootstrap)
+For example:
 
-There is **no default admin password and no admin "secret key" on a register page any more** (public registration is
-disabled). Create the first admin from the server console:
-
-```powershell
-python manage.py create-admin --username principal --name "College Admin"
+```env
+SECRET_KEY=your-secret-key
 ```
 
-You are prompted twice for a password (min 8 chars, a letter and a digit; not echoed, stored only as a hash).
-Sign in on the **Admin / Teacher** tab. Teachers are created from *Admin → Teachers*.
+Configure any additional database, CAPTCHA, session, or authentication settings required by the project.
 
-## 3. Admin creates a student account
+**Security:** Use strong secret values, keep API credentials and passwords private, and never upload production secrets to GitHub.
 
-*Admin → Students → + Add Student* → roll number, name, **registered mobile number**, class/branch, year.
+### 6. Run the Application
 
-* Roll numbers are unique (case-insensitive, stored upper-case) and are the student's username.
-* The mobile number becomes the **initial password**; only its hash is stored.
-* The account is flagged *password change pending*.
-* From the student page the admin can edit details (incl. mobile), activate/deactivate, reset the password,
-  delete/restore, and see the student's lost/found/claim history and recent activity.
+If `app.py` exposes a Flask application named `app`, you can start it using:
 
-## 4. First-login workflow for students
+```bash
+python app.py
+```
 
-1. Student opens the **Student** tab, enters roll number + registered mobile number + CAPTCHA.
-2. They are redirected to *Change password*; no other page works until it is done.
-3. They enter the current password (the mobile number), a new password (≥ 8 chars, letter + digit, not common,
-   not their roll/mobile number) and confirm it.
-4. All other sessions of that account are invalidated; the student lands on their dashboard.
-5. Later changes: *Change Password* in the user menu (the current password is always required).
+Alternatively, if the application is designed to run through the Flask CLI:
 
-Mode is set by `PASSWORD_CHANGE_MODE` in `.env`: `optional` (default – the change page has a **Skip for now** button and a
-reminder banner stays until the password is changed) or `forced` (nothing else works until it is changed).
+```bash
+flask --app app run --debug
+```
 
-### Forgotten password (admin or teacher)
-*Students → open student → "Forgot password? Reset it…"*. No current password is needed. Leave the new password empty to
-put the registered mobile number back, or type a temporary password. Only the password changes – the student's reports,
-claims and history stay intact; their other logged-in devices are signed out. The activity log records who/when/why
-(never a password). Teachers can do this by default (`students.reset_password`); set `RESET_REQUIRE_REAUTH=1` to make staff
-re-enter their own password first. Admins can see *whether* a change is pending, never a password.
+Open the local URL shown in your terminal, usually:
 
-## 5. Roles and permissions
+```text
+http://127.0.0.1:5000
+```
 
-Every protected action is guarded by a named permission (see `config.py`). **Admins always have all of them.**
-**Teachers get only what `TEACHER_PERMISSIONS` lists** (default: `reports.view_all`, `students.view`, `students.reset_password` –
-reports overview, masked student roster, and password resets; no editing/deleting students, no private data). Students hold none and can never open admin/teacher pages.
-
-| Permission | Meaning |
-|---|---|
-| `students.view` / `students.manage` / `students.reset_password` | roster (mobile masked) / create-edit-activate-delete / reset passwords |
-| `reports.view_all` / `reports.moderate` | see all reports / change status, delete reports |
-| `claims.review` + `private.view` | open private ownership answers and approve/reject claims |
-| `private.view` | private contact numbers, mobile numbers, hidden distinguishing features |
-| `audit.view` | activity history |
-| `staff.manage` | create/disable teachers, reset their passwords |
-
-Example: `TEACHER_PERMISSIONS=reports.view_all,students.view,audit.view` in `.env`.
-
-## 6. Security features
-
-| Area | Implementation |
-|---|---|
-| Password storage | Werkzeug scrypt hashes; legacy PBKDF2 hashes still verify and are upgraded at next login |
-| CAPTCHA | `CAPTCHA_PROVIDER=local` (default, offline, server-generated image; answer kept only as an HMAC, single-use, 5-minute expiry) or `turnstile` / `recaptcha` / `hcaptcha` (need `CAPTCHA_SITE_KEY` + `CAPTCHA_SECRET_KEY` and internet; verified server-side, fails closed). `disabled` works only in development/testing |
-| Brute force | 5 failed logins per account → 15-minute lockout (even for the right password); per-IP throttle; CAPTCHA failures never lock an account; all configurable |
-| Sessions | fresh session on login, 8 h lifetime, 30 min idle timeout, HttpOnly + SameSite cookies; `session_version` ends sessions on password change/reset, deactivation and deletion |
-| CSRF | token on every POST form (`CSRF_ENABLED`) |
-| Uploads | extension + file-signature check, random server-side name, only image types served, `nosniff` |
-| Audit | `activity_log` is append-only (SQLite triggers reject UPDATE/DELETE); actor IDs + name/roll snapshots; never stores passwords or private answers |
-| SQL | parameterised queries only; LIKE wildcards escaped; dynamic filters use fixed whitelists |
-| Misc | open-redirect-safe `next`, security headers, `no-store` on logged-in pages, debug server off by default |
-
-## 7. Database migration
-
-Schema version 1 is applied automatically by `init_db()` (at app start and by `python manage.py migrate`).
-Before touching a pre-ERP database a consistent copy is written next to it
-(`findback.sqlite.pre-erp-migration-<timestamp>.bak`). The migration is transactional and idempotent. It:
-
-* adds account columns (`username`, `roll_number`, `mobile`, `class_branch`, `academic_year`, `is_active`, `is_deleted`,
-  `must_change_password`, `session_version`, timestamps) with unique indexes on roll number and username;
-* adds `verified_at/by` and `returned_at/by` to `reports` (back-filled from the old status trail);
-* creates `activity_log`, `login_attempts`, `captcha_challenges`, `schema_migrations`, and back-fills activity history from
-  existing reports, claims and status changes;
-* **keeps every existing user, report, claim and audit row.** Legacy admins get a username derived from their e-mail
-  (`admin@findback.edu` → `admin`) and must change their password at next login. Legacy self-registered students have no
-  roll number or mobile, so they are **kept but deactivated** until an admin completes the profile and activates them.
-
-Students are stored with role value `user` (the historical value) and shown as "Student" in the UI.
-
-## 8. Limitations
-
-* Because the initial password is the mobile number the admin typed, the admin knows it **until the student's first login**
-  (the forced change limits the window). Mobile numbers are masked for staff without `private.view`.
-* The local CAPTCHA is an offline image challenge; determined bots can OCR it. Use Turnstile/reCAPTCHA/hCaptcha in production.
-* Lockout is per account identifier (an attacker who solves CAPTCHAs could temporarily lock a roll number) plus per-IP limits.
-* `X-Forwarded-For` is trusted only when `TRUST_PROXY_HEADERS=1`.
-* Only students file reports and claims; teachers/admins monitor and moderate.
-* SQLite is kept (as before); move to PostgreSQL for many concurrent users.
-* The React demo in `../src` is a standalone mock with its own seed data and is not wired to this backend.
+*Use the startup command that matches your application's actual entry point and configuration.*
 
 ---
 
-## 📁 Project Structure
+## ☁️ Deployment
 
-```
-findback/
-├── app.py                # Application factory, routes, and entrypoint
-├── config.py             # Environment configurations and session cookies
-├── models.py             # SQLite database layer, schema, and queries
-├── matching.py           # Pure Python deterministic scoring engine
-├── seed.py               # Pre-populated demo database runner
-├── requirements.txt      # Dependencies (Flask, Werkzeug, python-dotenv)
-├── .env.example          # Template for environment secrets
-├── .gitignore            # Clean git configuration
-├── auth/                 # User registration, login, logout, RBAC
-│   ├── __init__.py
-│   └── routes.py
-├── reports/              # Lost & found submission, browse, smart matching
-│   ├── __init__.py
-│   └── routes.py
-├── claims/               # Private claim submission & owner challenge
-│   ├── __init__.py
-│   └── routes.py
-├── admin/                # Security admin dashboard, verification console
-│   ├── __init__.py
-│   └── routes.py
-├── templates/            # Bootstrap 5 responsive templates
-│   ├── base.html
-│   ├── index.html
-│   ├── 404.html
-│   ├── 500.html
-│   ├── auth/
-│   ├── reports/
-│   ├── claims/
-│   ├── user/
-│   └── admin/
-├── static/               # CSS styles & client JavaScript
-│   ├── css/custom.css
-│   └── js/main.js
-├── tests/                # Automated test suite (18 unit tests)
-│   ├── test_auth.py
-│   ├── test_reports.py
-│   ├── test_matching.py
-│   ├── test_claims_and_rbac.py
-│   └── run_tests.py
-└── uploads/              # Local storage for optional report photos
-```
+FindBack has been deployed using **PythonAnywhere**.
+
+General deployment workflow:
+
+1. Upload or clone the project into your hosting environment.
+2. Create and configure a Python virtual environment.
+3. Install the dependencies from `requirements.txt`.
+4. Configure the WSGI entry point and environment variables.
+5. Configure database access, session security, and CAPTCHA settings.
+6. Reload the web application and test student, teacher, and administrator workflows.
+
+Before deployment, verify that the application uses secure production settings and that confidential information is not exposed.
 
 ---
 
-## 🚀 Setup & Execution Instructions
+## 🔮 Future Scope
 
-### On Windows (PowerShell)
+### 🏫 Integration with the College Portal
 
-1. **Clone or Extract Archive:**
-   ```powershell
-   cd FindBack_Lost_and_Found_Portal
-   ```
+Our future goal is to integrate FindBack directly into the **existing college portal** as a dedicated Lost & Found section.
 
-2. **Create and Activate Python Virtual Environment:**
-   ```powershell
-   python -m venv venv
-   .\venv\Scripts\Activate.ps1
-   ```
+The planned integration will work as follows:
 
-3. **Install Dependencies:**
-   ```powershell
-   pip install -r requirements.txt
-   ```
+- **Dedicated Portal Section:** FindBack will be accessible as a separate section within the college's official portal.
+- **Administrator-Controlled Permissions:** The college administration will control access permissions and the management of this section.
+- **Visible to All Students:** The Lost & Found section will be visible to students whether or not they have previously reported a lost item or submitted a found-item report.
+- **Centralized Access:** Students will be able to open the section directly from the college portal instead of visiting a separate website.
+- **Simplified Student Experience:** Students can check available reports whenever they need to, even if they have never submitted a report before.
+- **Improved Campus Coordination:** Centralized reporting can help students and authorized college staff coordinate the recovery of lost belongings.
 
-4. **Configure Environment:**
-   ```powershell
-   Copy-Item .env.example .env
-   ```
+The aim is to make FindBack a regular part of the college's digital ecosystem, with appropriate permissions and administrative oversight.
 
-5. **Seed Demo Data & Run Tests:**
-   ```powershell
-   # Run automated test suite (18 tests)
-   python tests\run_tests.py
+### 🚀 Additional Enhancements
 
-   # Seed database with demo items & credentials
-   python seed.py
-   ```
-
-6. **Start the FindBack Portal:**
-   ```powershell
-   python app.py
-   ```
-   Open your browser to: `http://localhost:5000`
+- 🔔 Notifications when a potentially matching item is reported.
+- 🖼️ Image uploads for lost and found items.
+- 🔎 Advanced search and filtering.
+- 📧 Email notifications for claims and status updates.
+- 📊 Reports and analytics for administrators.
+- 📱 Improved mobile experience.
+- 🔐 Integration with college student accounts or single sign-on.
+- 🏫 Support for multiple departments and campuses.
 
 ---
 
-### On Linux / macOS (Bash)
+## 🏆 Hackathon Credits
 
-1. **Activate Virtual Environment:**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   cp .env.example .env
-   ```
+**Event:** Parakram Hackathon, SRIMT  
+**Team Name:** Hack Hawk
 
-2. **Run Tests & Seed Database:**
-   ```bash
-   python3 tests/run_tests.py
-   python3 seed.py
-   ```
+**Team Leader:** Ashish Kumar Prajapati
 
-3. **Launch Server:**
-   ```bash
-   python3 app.py
-   ```
-   Open: `http://localhost:5000`
+**Team Members:**
+- [@Rajarshi Roop Sahani](https://github.com/RajarshiroopAI)
+- [@Sonali Gupta](https://github.com/sonalicodehub)
+- [@Swayam Gupta](https://github.com/swayamgupta302-crypto)
+
+FindBack was developed as a team project during the hackathon to address the everyday challenge of recovering lost belongings in a college environment.
 
 ---
 
+## 👨‍💻 Author & Links
 
-## 🛡️ Security & Privacy Guarantees
+**Ashish Kumar Prajapati**
 
-- **No SQL Injection**: 100% parameterized SQLite statements (`cur.execute(query, params)`).
-- **No Password Exposure**: Passwords never logged or stored in plain-text; hashed with 100,000 PBKDF2-HMAC-SHA256 iterations and random salt.
-- **No Private Contact Leakage**: Public endpoints filter out phone numbers and emails.
-- **Challenge Answer Protection**: Claim verification answers are stored securely and never displayed to normal users.
-- **Immutable Status Audit**: Every lifecycle shift is logged with user ID, timestamps, old status, new status, and administrative reason notes.
+- GitHub: [@codertheashish](https://github.com/codertheashish)
+- LinkedIn: [@codertheashish](https://www.linkedin.com/in/codertheashish/)
+- Instagram: [@codertheashish](https://www.instagram.com/codertheashish/)
 
-Additional modules: `security.py` (CSRF, CAPTCHA, RBAC, session guards), `validators.py`, `manage.py` (CLI), `tests/helpers.py`.
+---
+
+## 🤝 Contributing
+
+Suggestions, improvements, and contributions are welcome.
+
+If you would like to contribute:
+
+1. Fork this repository.
+2. Create a new feature branch.
+3. Make your changes and test them.
+4. Submit a pull request describing your improvements.
+
+---
+
+## 📜 License
+
+A license has not been specified here. Add a suitable open-source license to the repository if you intend to permit reuse and redistribution.
+
+---
+
+⭐ **If you like FindBack, consider giving this repository a star on GitHub!**
+
+Built with teamwork and innovation by **Team Hack Hawk** at Parakram Hackathon, SRIMT.
