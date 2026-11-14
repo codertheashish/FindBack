@@ -118,7 +118,7 @@ Make sure you have:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/codertheashish/FindBack.git
+git clone https://github.com/codertheashish/FindBack
 ```
 
 ### 2. Open the Project Folder
